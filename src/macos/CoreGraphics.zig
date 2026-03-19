@@ -186,6 +186,6 @@ pub extern "C" fn CGEventTapCreate(tap: CGEventTapLocation, place: CGEventTapPla
 
 /// Enables or disables an event tap.
 ///
-/// Defined at:
+/// Defined at: /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk/System/Library/Frameworks/CoreGraphics.framework/CGEvent.h
 /// Documented at: https://developer.apple.com/documentation/coregraphics/cgevent/tapenable(tap:enable:)?language=objc
 pub extern "C" fn CGEventTapEnable(tap: foundation.CFMachPortRef, enable: bool) void;
