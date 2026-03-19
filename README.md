@@ -2,11 +2,6 @@
 
 Key is a command-line utility for macOS, aiming to log human-interface devices (HID) events.
 
-## ~Click~ Clique
-
-Key is an utility used by **Clique** developers to map a few known and unknown events. It's specially 
-useful to add support for unique devices.
-
 ## Install
 
 TBD.
