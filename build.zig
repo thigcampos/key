@@ -12,6 +12,9 @@ pub fn build(b: *std.Build) void {
         }),
     });
 
+    exe.linkFramework("CoreFoundation");
+    exe.linkFramework("CoreGraphics");
+
     b.installArtifact(exe);
 
     const run_step = b.step("run", "Run the app");
