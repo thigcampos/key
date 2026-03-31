@@ -1,61 +1,37 @@
 const std = @import("std");
-const graphics = @import("macos/CoreGraphics.zig");
-const foundations = @import("macos/CoreFoundations.zig");
-
-fn eventCallback(
-    proxy: graphics.CGEventTapProxy,
-    event_type: graphics.CGEventType,
-    event: ?graphics.CGEventRef,
-    refcon: ?*anyopaque,
-) callconv(.c) ?graphics.CGEventRef {
-    // Won't be used
-    _ = proxy;
-    _ = refcon;
-
-    switch (event_type) {
-        graphics.CGEventType.keyDown => {
-            const key_code = graphics.CGEventGetIntegerValueField(event, graphics.CGEventField.kCGKeyboardEventKeycode);
-            const flags = graphics.CGEventGetFlags(event);
-            std.debug.print("[key]   keycode={d}  flags=0x{x}\n", .{ key_code, @intFromEnum(flags) });
-        },
-        graphics.CGEventType.leftMouseDown, graphics.CGEventType.rightMouseDown, graphics.CGEventType.otherMouseDown => {
-            const button = graphics.CGEventGetIntegerValueField(event, graphics.CGEventField.kCGMouseEventButtonNumber);
-            const loc = graphics.CGEventGetLocation(event);
-            std.debug.print("[mouse] button={d}  x={d:.1}  y={d:.1}\n", .{ button, loc.x, loc.y });
-        },
-        else => {},
-    }
-
-    return event;
-}
-
-fn runLoop() void {
-    const event_mask: graphics.CGEventMask = graphics.kCGEventMaskForAllEvents; // A catch-all for masks
-    const tap = graphics.CGEventTapCreate(
-        graphics.CGEventTapLocation.kCGHIDEventTap,
-        graphics.CGEventTapPlacement.kCGHeadInsertEventTap,
-        graphics.CGEventTapOptions.kCGEventTapOptionListenOnly,
-        event_mask,
-        eventCallback,
-        @as(?*anyopaque, null),
-    );
-    defer foundations.CFRelease(tap.?);
-
-    if (tap == null) {
-        std.debug.print("Failed to create event tap. Grant Accessibility permissions.\n", .{});
-        std.process.exit(1);
-    }
-
-    const src = foundations.CFMachPortCreateRunLoopSource(null, tap, 0);
-    defer foundations.CFRelease(src.?);
-
-    foundations.CFRunLoopAddSource(foundations.CFRunLoopGetCurrent(), src, foundations.kCFRunLoopCommonModes);
-    graphics.CGEventTapEnable(tap, true);
-
-    std.debug.print("Listening for key & mouse down events. Ctrl+C to stop.\n", .{});
-    foundations.CFRunLoopRun();
-}
+var stdout = std.fs.File.stdout().writer(&.{});
+const commands = @import("commands.zig");
 
 pub fn main() !void {
-    runLoop();
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+    const allocator = gpa.allocator();
+
+    const args = try std.process.argsAlloc(allocator);
+    defer std.process.argsFree(allocator, args);
+
+    const help_message =
+        \\Log human-interface events in macOS.
+        \\
+        \\Commands and flags:
+        \\
+        \\  key log        starts human-interface device logger.
+        \\  key --help     prints the help message.
+        \\
+    ;
+
+    if (args.len != 2) {
+        return;
+    }
+
+    if (std.mem.eql(u8, args[1], "--help")) {
+        try stdout.interface.print(help_message, .{});
+        return;
+    }
+
+    if (std.mem.eql(u8, args[1], "log")) {
+        commands.log_events();
+        return;
+    }
 }
+
